@@ -126,7 +126,7 @@ export default {
    * @param signature The signature to be used in Secure Mode. Can be undefined for Normal Mode usage.
    */
   navigate: (
-    route: string,
+    route: HelpScoutBeacon.Route,
     settings: HelpScoutBeacon.Settings,
     signature?: string,
     articleId?: string
