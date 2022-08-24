@@ -8,19 +8,19 @@ A react-native implementation/bridge of the helpscout-beacon package.
 yarn add react-native-help-scout-beacon
 ```
 
-## iOS Setup
+### iOS Setup
 
-### Photos
+#### Photos
 
 The attachments menu for sending a message has code to allow users to take a photo or select one from their photo library. Even if you have attachments disabled, Apple flags usage of these APIs; so, it requires a description string in the app’s `Info.plist` file.
 
 The required settings are `NSPhotoLibraryUsageDescription`, `NSCameraUsageDescription`, `NSMicrophoneUsageDescription` and `NSPhotoLibraryAddUsageDescription`.
 
-### Documents
+#### Documents
 
 To access the documents picker in the attachment menu you must create an iCloud container that matches your app’s bundle ID.
 
-### Push Notifications
+#### Push Notifications
 
 If you do not already have push notifications active in your application, you may receive a warning when uploading to App Store Connect. Similar to Photos, App Store Connect flags usage of these APIs in code independent of whether you invoke them or not.
 To support push notifications, perform the following setup:
@@ -34,6 +34,26 @@ To support push notifications, perform the following setup:
 if HSBeacon.isBeaconPushNotification(userInfo) {
   HSBeacon.handlePushNotification(userInfo, beaconSettings: settings)
 }
+```
+
+### Android Setup
+
+- When successfully received a push token, you can set it natively by calling `Beacon.setFirebaseCloudMessagingToken(token)` or using the JS method `Beacon.registerPushNotificationToken(token)`.
+
+- Add the following to your `onMessageReceived(RemoteMessage)` for correctly handling incoming push notifications:
+
+```java
+  @Override
+  public void onMessageReceived(RemoteMessage remoteMessage) {
+      if (remoteMessage.getData().size() > 0) {
+        BeaconPushNotificationsProcessor beaconPushNotificationsProcessor = new BeaconPushNotificationsProcessor()
+          if (BeaconPushNotificationsProcessor.isBeaconNotification(remoteMessage.getData())) {
+              beaconPushNotificationsProcessor.process(this, remoteMessage.getData());
+          } else {
+              // here can process your own push messages
+          }
+      }
+  }
 ```
 
 ## Usage
@@ -60,11 +80,36 @@ Beacon.open({ beaconId: '<beacon_id>' });
 - [ ] Contact form
   - [ ] Prefilling
   - [ ] Resetting
-- [ ] Navigate to a screen
-  - [x] Custom routes
+- [x] Navigate to a screen
   - [x] Open with search results
-  - [ ] Open to an article
-  - [ ] Open to the contact form
+  - [x] Open to an article
+  - [x] Open to the contact form
+  - [x] Previous messages
+  - [x] Open chat
+  - [x] Open ask
+- [x] Custom Suggestions
+- [ ] Open and close events
+- [x] Push Notifications
+
+### Android
+
+- [x] Open
+  - [x] Normal Mode
+  - [x] Safe Mode
+- [x] Authenticate Users
+  - [x] User attributes
+- [x] Logout
+- [ ] Session attributes
+- [x] Contact form
+  - [x] Prefilling
+  - [x] Resetting
+- [x] Navigate to a screen
+  - [x] Open with search results
+  - [x] Open to an article
+  - [x] Open to the contact form
+  - [x] Previous messages
+  - [x] Open chat
+  - [x] Open ask
 - [x] Custom Suggestions
 - [ ] Open and close events
 - [x] Push Notifications
@@ -76,7 +121,3 @@ See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the 
 ## License
 
 MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
