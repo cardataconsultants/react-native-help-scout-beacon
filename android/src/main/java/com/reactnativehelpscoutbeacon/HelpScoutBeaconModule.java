@@ -40,21 +40,23 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
   }
 
   private BeaconConfigOverrides extractBeaconSettings(ReadableMap rawSettings) {
-    boolean messagingEnabled = rawSettings.getBoolean("messagingEnabled");
-    boolean docsEnabled = rawSettings.getBoolean("docsEnabled");
-    boolean chatEnabled = rawSettings.getBoolean("chatEnabled");
-    String color = rawSettings.getString("color");
-    String rawFocusMode = rawSettings.getString("focusMode");
+    String rawFocusMode = rawSettings.hasKey("focusMode") ? rawSettings.getString("focusMode") : "invalid";
     FocusMode focusMode;
     switch(rawFocusMode) {
       case "neutral": focusMode = FocusMode.NEUTRAL; break;
       case "self-service": focusMode = FocusMode.SELF_SERVICE; break;
       case "ask-first": focusMode = FocusMode.ASK_FIRST; break;
-      default: throw new Error("Invalid focus mode: " + rawFocusMode);
+      default: focusMode = null; break;
     }
-    boolean enablePreviousMessages = rawSettings.getBoolean("enablePreviousMessages");
     BeaconConfigOverrides configOverrides = new BeaconConfigOverrides(
-      docsEnabled, messagingEnabled, chatEnabled, null, color, focusMode, enablePreviousMessages);
+      rawSettings.hasKey("docsEnabled") ? rawSettings.getBoolean("docsEnabled") : null,
+      rawSettings.hasKey("messagingEnabled") ? rawSettings.getBoolean("messagingEnabled") : null,
+      rawSettings.hasKey("chatEnabled") ? rawSettings.getBoolean("chatEnabled") : null,
+      null,
+      rawSettings.hasKey("color") ? rawSettings.getString("color") : null,
+      focusMode,
+      rawSettings.hasKey("enablePreviousMessages") ? rawSettings.getBoolean("enablePreviousMessages") : true
+    );
     return configOverrides;
   }
 
@@ -64,7 +66,7 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     }
 
     Map<String, String> attributes = new HashMap<>();
-    ReadableMap rawAttributes = identity.getMap("attributes");
+    ReadableMap rawAttributes = identity.hasKey("attributes") ? identity.getMap("attributes") : null;
     if(rawAttributes != null) {
       ReadableMapKeySetIterator iterator = rawAttributes.keySetIterator();
       while(iterator.hasNextKey()) {
@@ -75,10 +77,10 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
 
     BeaconUser user = new BeaconUser(
       identity.getString("email"),
-      identity.getString("name"),
-      identity.getString("company"),
-      identity.getString("jobTitle"),
-      identity.getString("avatar"),
+      identity.hasKey("name") ? identity.getString("name") : null,
+      identity.hasKey("company") ? identity.getString("company") : null,
+      identity.hasKey("jobTitle") ? identity.getString("jobTitle") : null,
+      identity.hasKey("avatar") ? identity.getString("avatar") : null,
       attributes
     );
 
@@ -91,10 +93,12 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
   }
 
   private void configureBeacon(ReadableMap rawSettings) {
-    Beacon beacon = new Beacon.Builder()
-      .withBeaconId(rawSettings.getString("beaconId"))
-      .withLogsEnabled(rawSettings.getBoolean("logsEnabled"))
-      .build();
+    Beacon.Builder builder = new Beacon.Builder()
+      .withBeaconId(rawSettings.getString("beaconId"));
+    if(rawSettings.hasKey("logsEnabled")) {
+      builder = builder.withLogsEnabled(rawSettings.getBoolean("logsEnabled"));
+    }
+    builder.build();
     BeaconConfigOverrides configOverrides = extractBeaconSettings(rawSettings);
     Beacon.setConfigOverrides(configOverrides);
   }
