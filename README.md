@@ -100,9 +100,9 @@ Beacon.open({ beaconId: '<beacon_id>' });
   - [x] User attributes
 - [x] Logout
 - [ ] Session attributes
-- [ ] Contact form
-  - [ ] Prefilling
-  - [ ] Resetting
+- [x] Contact form
+  - [x] Prefilling
+  - [x] Resetting
 - [x] Navigate to a screen
   - [x] Open with search results
   - [x] Open to an article
@@ -110,7 +110,7 @@ Beacon.open({ beaconId: '<beacon_id>' });
   - [x] Previous messages
   - [x] Open chat
   - [x] Open ask
-- [ ] Custom Suggestions
+- [x] Custom Suggestions
 - [ ] Open and close events
 - [x] Push Notifications
 

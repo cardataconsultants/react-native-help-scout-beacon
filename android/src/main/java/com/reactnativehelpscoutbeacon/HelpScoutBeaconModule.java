@@ -16,14 +16,19 @@ import com.helpscout.beacon.model.BeaconConfigOverrides;
 import com.helpscout.beacon.model.BeaconScreens;
 import com.helpscout.beacon.model.BeaconUser;
 import com.helpscout.beacon.model.FocusMode;
+import com.helpscout.beacon.model.PreFilledForm;
+import com.helpscout.beacon.model.SuggestedArticle;
 import com.helpscout.beacon.ui.BeaconActivity;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 @ReactModule(name = HelpScoutBeaconModule.NAME)
 public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
@@ -103,6 +108,27 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     Beacon.setConfigOverrides(configOverrides);
   }
 
+  private List<SuggestedArticle> extractBeaconSuggestions(ReadableArray rawSuggestions) {
+    List<SuggestedArticle> suggestions = new ArrayList<>();
+
+    for(int index = 0; index < rawSuggestions.size(); index++) {
+      ReadableMap rawSuggestion = rawSuggestions.getMap(index);
+      String type = rawSuggestion.getString("type");
+      if(type == "link") {
+        String link = rawSuggestion.getString("link");
+        String label = rawSuggestion.getString("label");
+        suggestions.add(new SuggestedArticle.SuggestedArticleWithUrl(label, link));
+      } else if(type == "article") {
+        String articleId = rawSuggestion.getString("articleId");
+        suggestions.add(new SuggestedArticle.SuggestedArticleWithId(articleId));
+      } else {
+        throw new Error("Invalid suggestion type: " + type);
+      }
+    }
+
+    return suggestions;
+  }
+
   @ReactMethod
   public void open(ReadableMap rawSettings, String signature, Promise promise) {
     configureBeacon(rawSettings);
@@ -117,6 +143,7 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     if(user != null) {
       Beacon.identify(user.getEmail(), user.getName(), user.getCompany(), user.getJobTitle(), user.getAvatar());
     }
+    promise.resolve(null);
   }
 
   @ReactMethod
@@ -125,21 +152,26 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     if(user != null) {
       Beacon.identify(user.getEmail(), user.getName(), user.getCompany(), user.getJobTitle(), user.getAvatar());
     }
+    promise.resolve(null);
   }
 
   @ReactMethod
   public void logout(Promise promise) {
     Beacon.logout();
+    promise.resolve(null);
   }
 
   @ReactMethod
   public void registerPushNotificationToken(String token, Promise promise) {
     Beacon.setFirebaseCloudMessagingToken(token);
+    promise.resolve(null);
   }
 
   @ReactMethod
   public void suggest(ReadableArray suggestions, Promise promise) {
-
+    List<SuggestedArticle> beaconSuggestions = extractBeaconSuggestions(suggestions);
+    Beacon.setOverrideSuggestedArticlesOrLinks(beaconSuggestions);
+    promise.resolve(null);
   }
 
   @ReactMethod
@@ -165,6 +197,7 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     } else {
       BeaconActivity.openInSecureMode(getReactApplicationContext(), signature, BeaconScreens.SEARCH_SCREEN, data);
     }
+    promise.resolve(null);
   }
 
   @ReactMethod
@@ -179,6 +212,38 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     } else {
       BeaconActivity.openInSecureMode(getReactApplicationContext(), signature, BeaconScreens.SEARCH_SCREEN, searchList);
     }
+    promise.resolve(null);
+  }
+
+  @ReactMethod
+  public void prefillContactForm(ReadableMap formData, Promise promise) {
+    ReadableMap customFieldValues = formData.getMap("customFieldValues");
+    Map<Integer, String> attributes = new HashMap<>();
+    ReadableMapKeySetIterator iterator = customFieldValues.keySetIterator();
+    while(iterator.hasNextKey()) {
+      String key = iterator.nextKey();
+      attributes.put(Integer.parseInt(key), customFieldValues.getString(key));
+    }
+    PreFilledForm prefilled = new PreFilledForm(
+      formData.getString("name"),
+      formData.getString("subject"),
+      formData.getString("message"),
+      attributes,
+      (List) formData.getArray("attachments").toArrayList(),
+      formData.getString("email")
+    );
+    Beacon.addPreFilledForm(prefilled);
+    promise.resolve(null);
+  }
+
+  @ReactMethod
+  public void resetContactForm(Promise promise) {
+    Beacon.contactFormReset();
+  }
+
+  @ReactMethod
+  public void resetPrefilledForm(Promise promise) {
+    Beacon.prefilledFormReset();
   }
 
 }

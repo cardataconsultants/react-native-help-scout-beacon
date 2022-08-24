@@ -67,6 +67,15 @@ export declare module HelpScoutBeacon {
     //article only
     articleId?: string;
   }
+
+  export interface ContactFormData {
+    name: string;
+    subject: string;
+    message: string;
+    customFieldValues: Record<string, string>;
+    attachments: string[];
+    email: string;
+  }
 }
 
 export default {
@@ -149,5 +158,14 @@ export default {
     signature?: string
   ) => {
     HelpScoutBeacon.search(query, settings, signature);
+  },
+  prefillContactForm: (formData: HelpScoutBeacon.ContactFormData) => {
+    HelpScoutBeacon.prefillContactForm(formData);
+  },
+  resetContactForm: () => {
+    HelpScoutBeacon.resetContactForm();
+  },
+  resetPrefilledForm: () => {
+    HelpScoutBeacon.resetPrefilledForm();
   },
 };
