@@ -20,6 +20,14 @@ const HelpScoutBeacon = NativeModules.HelpScoutBeacon
 export declare module HelpScoutBeacon {
   export type FocusMode = 'neutral' | 'self-service' | 'ask-first';
 
+  export type Route =
+    | 'home'
+    | 'article'
+    | 'contact'
+    | 'chat'
+    | 'ask'
+    | 'previous-messages';
+
   export interface Settings {
     beaconId: string;
     identity?: Identity;
@@ -113,15 +121,17 @@ export default {
    * If you provide a valid signature, you can use it to authenticate a user in Secure Mode and retrieve their previous conversations.
    * Note: you should not store the secret key in the app; instead, your server should provide the computed signature value.
    * @param route The route to navigate to
+   * @param articleId The articleId (required when route is article)
    * @param settings The settings used to show the beacon
    * @param signature The signature to be used in Secure Mode. Can be undefined for Normal Mode usage.
    */
   navigate: (
     route: string,
     settings: HelpScoutBeacon.Settings,
-    signature?: string
+    signature?: string,
+    articleId?: string
   ) => {
-    HelpScoutBeacon.navigate(route, settings, signature);
+    HelpScoutBeacon.navigate(route, settings, signature, articleId);
   },
   /**
    * This method opens the Beacon, searches docs articles and loads the results screen

@@ -37,6 +37,22 @@ extension UIColor {
     
 }
 
+extension BeaconRoute {
+    
+    static func from(jsRoute: String, articleId: String? = nil) -> BeaconRoute {
+        switch jsRoute {
+        case "home": return .home
+        case "article": return .article(articleId!)
+        case "contact": return .askMessage
+        case "chat": return .askChat
+        case "ask": return .ask
+        case "previous-messages": return .previousMessages
+        default: fatalError("Invalid route: " + jsRoute);
+        }
+    }
+    
+}
+
 @objc(HelpScoutBeacon)
 class HelpScoutBeacon: NSObject {
     
@@ -199,23 +215,25 @@ class HelpScoutBeacon: NSObject {
         resolve(nil)
     }
     
-    @objc(navigate:settings:signature:withResolver:withRejecter:)
-    func navigate(_ route: NSString?, settings rawSettings: NSDictionary?, signature: NSString?, resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
+    @objc(navigate:settings:signature:articleId:withResolver:withRejecter:)
+    func navigate(_ jsRoute: NSString?, settings rawSettings: NSDictionary?, signature: NSString?, articleId: NSString?,  resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
         guard let rawSettings = rawSettings else {
           reject("missing-settings", "Missing settings. The beacon id is obligatory.", nil)
           return
         }
-        guard let route = route else {
+        guard let jsRoute = jsRoute else {
           reject("missing-route", "Missing route.", nil)
           return
         }
         
+        let route = BeaconRoute.from(jsRoute: String(jsRoute), articleId: articleId != nil ? String(articleId!) : nil)
+        
         let settings = extractBeaconSettings(from: rawSettings)
         DispatchQueue.main.async {
             if let signature = signature {
-                HSBeacon.navigate(String(route), beaconSettings: settings, signature: String(signature))
+                HSBeacon.navigate(route.route, beaconSettings: settings, signature: String(signature))
             } else {
-                HSBeacon.navigate(String(route), beaconSettings: settings)
+                HSBeacon.navigate(route.route, beaconSettings: settings)
             }
         }
         

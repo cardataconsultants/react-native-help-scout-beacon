@@ -60,12 +60,37 @@ Beacon.open({ beaconId: '<beacon_id>' });
 - [ ] Contact form
   - [ ] Prefilling
   - [ ] Resetting
-- [ ] Navigate to a screen
-  - [x] Custom routes
+- [x] Navigate to a screen
   - [x] Open with search results
-  - [ ] Open to an article
-  - [ ] Open to the contact form
+  - [x] Open to an article
+  - [x] Open to the contact form
+  - [x] Previous messages
+  - [x] Open chat
+  - [x] Open ask
 - [x] Custom Suggestions
+- [ ] Open and close events
+- [x] Push Notifications
+
+### Android
+
+- [x] Open
+  - [x] Normal Mode
+  - [x] Safe Mode
+- [x] Authenticate Users
+  - [x] User attributes
+- [x] Logout
+- [ ] Session attributes
+- [ ] Contact form
+  - [ ] Prefilling
+  - [ ] Resetting
+- [x] Navigate to a screen
+  - [x] Open with search results
+  - [x] Open to an article
+  - [x] Open to the contact form
+  - [x] Previous messages
+  - [x] Open chat
+  - [x] Open ask
+- [ ] Custom Suggestions
 - [ ] Open and close events
 - [x] Push Notifications
 
@@ -76,7 +101,3 @@ See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the 
 ## License
 
 MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)

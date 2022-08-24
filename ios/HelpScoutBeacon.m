@@ -25,6 +25,7 @@ RCT_EXTERN_METHOD(suggest:(NSArray *)suggestions
 RCT_EXTERN_METHOD(navigate:(NSString *)suggestions
                   settings:(NSDictionary *)settings
                   signature:(NSString *)signature
+                  articleId:(NSString *)articleId
                  withResolver:(RCTPromiseResolveBlock)resolve
                  withRejecter:(RCTPromiseRejectBlock)reject)
 
