@@ -4,6 +4,8 @@ import Foundation
 
 @objc(HelpScoutBeacon)
 class HelpScoutBeacon: NSObject {
+    
+    private var actualFormData: HSBridgeHelper.PrefillFormData?
 
     @objc(open:signature:withResolver:withRejecter:)
     func open(_ rawSettings: NSDictionary?, signature: NSString?, resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
@@ -13,6 +15,7 @@ class HelpScoutBeacon: NSObject {
         }
         
         let settings = HSBridgeHelper.extractBeaconSettings(from: rawSettings)
+        settings.delegate = self
         DispatchQueue.main.async {
             if let signature = signature {
                 HSBeacon.open(settings, signature: String(signature))
@@ -93,6 +96,7 @@ class HelpScoutBeacon: NSObject {
         let route = BeaconRoute.from(jsRoute: String(jsRoute), articleId: articleId != nil ? String(articleId!) : nil)
         
         let settings = HSBridgeHelper.extractBeaconSettings(from: rawSettings)
+        settings.delegate = self
         DispatchQueue.main.async {
             if let signature = signature {
                 HSBeacon.navigate(route.route, beaconSettings: settings, signature: String(signature))
@@ -121,6 +125,7 @@ class HelpScoutBeacon: NSObject {
         }
         
         let settings = HSBridgeHelper.extractBeaconSettings(from: rawSettings)
+        settings.delegate = self
         DispatchQueue.main.async {
             if let signature = signature {
                 HSBeacon.search(String(query), beaconSettings: settings, signature: String(signature))
@@ -136,4 +141,52 @@ class HelpScoutBeacon: NSObject {
         }
         resolve(nil)
     }
+    
+    @objc(prefillContactForm:withResolver:withRejecter:)
+    func prefillContactForm(formData rawFormData: NSDictionary?, resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
+        guard let rawFormData = rawFormData else {
+          reject("missing-formdata", "Missing formdata.", nil)
+          return
+        }
+        
+        let formData = HSBridgeHelper.extractFormData(from: rawFormData)
+        actualFormData = formData
+        resolve(nil)
+    }
+    
+    @objc(resetContactForm:withRejecter:)
+    func resetContactForm(_ resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
+        DispatchQueue.main.async {
+            HSBeacon.reset()
+        }
+        resolve(nil)
+    }
+    
+    @objc(resetPrefilledForm:withRejecter:)
+    func resetPrefilledForm(_ resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
+        DispatchQueue.main.async {
+            HSBeacon.reset()
+        }
+        resolve(nil)
+    }
+    
+}
+
+extension HelpScoutBeacon: HSBeaconDelegate {
+    
+    func prefill(_ form: HSBeaconContactForm) {
+        if let formData = actualFormData {
+            form.name = formData.name ?? form.name
+            form.email = formData.email ?? form.email
+            form.subject = formData.subject ?? form.subject
+            form.text = formData.message ?? form.text
+            
+            if let customFieldValues = formData.customFieldValues {
+                customFieldValues.forEach { (key: Any, value: Any) in
+                    form.addCustomFieldValue(value as! String, forId: key as! Int32)
+                }
+            }
+        }
+    }
+    
 }

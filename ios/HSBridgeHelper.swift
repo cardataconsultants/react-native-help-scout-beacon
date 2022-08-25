@@ -142,4 +142,22 @@ final class HSBridgeHelper {
         return validSuggestions
     }
     
+    struct PrefillFormData {
+        var email: String?
+        var subject: String?
+        var message: String?
+        var name: String?
+        var customFieldValues: NSDictionary?
+    }
+    
+    static func extractFormData(from rawFormData: NSDictionary) -> PrefillFormData {
+        var formData = PrefillFormData()
+        formData.email = rawFormData.value(forKey: "email") as? String
+        formData.subject = rawFormData.value(forKey: "subject") as? String
+        formData.message = rawFormData.value(forKey: "message") as? String
+        formData.name = rawFormData.value(forKey: "name") as? String
+        formData.customFieldValues = rawFormData.value(forKey: "customFieldValues") as? NSDictionary
+        return formData
+    }
+    
 }
