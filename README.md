@@ -77,9 +77,11 @@ Beacon.open({ beaconId: '<beacon_id>' });
   - [x] User attributes
 - [x] Logout
 - [ ] Session attributes
-- [ ] Contact form
-  - [ ] Prefilling
-  - [ ] Resetting
+- [x] Contact form
+  - [x] Prefilling
+    - [ ] Attachments
+    - [x] Custom fields
+  - [x] Resetting
 - [x] Navigate to a screen
   - [x] Open with search results
   - [x] Open to an article
@@ -102,6 +104,8 @@ Beacon.open({ beaconId: '<beacon_id>' });
 - [ ] Session attributes
 - [x] Contact form
   - [x] Prefilling
+    - [x] Attachments
+    - [x] Custom fields
   - [x] Resetting
 - [x] Navigate to a screen
   - [x] Open with search results

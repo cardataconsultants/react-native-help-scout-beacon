@@ -1,145 +1,11 @@
 import Beacon
 import Foundation
 
-extension NSDictionary {
-    
-    func ifExists<T>(key: String, ofType type: T.Type = T.self, callback: (T) -> Void) {
-        if let value = self.value(forKey: key) as? T {
-            callback(value)
-        }
-    }
-    
-}
-
-extension UIColor {
-    
-    static func from(hex: String) -> UIColor {
-        var cString:String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-
-        if (cString.hasPrefix("#")) {
-            cString.remove(at: cString.startIndex)
-        }
-
-        if ((cString.count) != 6) {
-            return UIColor.gray
-        }
-
-        var rgbValue:UInt64 = 0
-        Scanner(string: cString).scanHexInt64(&rgbValue)
-
-        return UIColor(
-            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
-            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
-            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
-            alpha: CGFloat(1.0)
-        )
-    }
-    
-}
-
-extension BeaconRoute {
-    
-    static func from(jsRoute: String, articleId: String? = nil) -> BeaconRoute {
-        switch jsRoute {
-        case "home": return .home
-        case "article": return .article(articleId!)
-        case "contact": return .askMessage
-        case "chat": return .askChat
-        case "ask": return .ask
-        case "previous-messages": return .previousMessages
-        default: fatalError("Invalid route: " + jsRoute);
-        }
-    }
-    
-}
 
 @objc(HelpScoutBeacon)
 class HelpScoutBeacon: NSObject {
     
-    private func extractBeaconUser(fromSettings settings: NSDictionary) -> HSBeaconUser? {
-        guard let identity = settings.value(forKey: "identity") as? NSDictionary else {
-            return nil
-        }
-        
-        return extractBeaconUser(fromIdentity: identity)
-    }
-    
-    private func extractBeaconUser(fromIdentity identity: NSDictionary) -> HSBeaconUser? {
-        let user = HSBeaconUser()
-        user.email = identity.value(forKey: "email") as? String
-        user.name = identity.value(forKey: "name") as? String
-        user.company = identity.value(forKey: "company") as? String
-        user.jobTitle = identity.value(forKey: "jobTitle") as? String
-        
-        if let avatar = identity.value(forKey: "avatar") as? String, let avatarUrl = URL(string: avatar) {
-            user.avatar = avatarUrl
-        }
-        
-        if let attributes = identity.value(forKey: "attributes") as? NSDictionary {
-            attributes.forEach {
-                if let key = $0 as? String, let value = $1 as? String {
-                    user.addAttribute(withKey: key, value: value)
-                }
-            }
-        }
-        
-        return user
-    }
-    
-    private func extractBeaconSettings(from rawSettings: NSDictionary) -> HSBeaconSettings {
-        guard let beaconId = rawSettings.value(forKey: "beaconId") as? String else {
-            fatalError("Missing required beaconId on the settings")
-        }
-        
-        let settings = HSBeaconSettings(beaconId: beaconId)
-        rawSettings.ifExists(key: "docsEnabled") { settings.docsEnabled = $0 }
-        rawSettings.ifExists(key: "messagingEnabled") { settings.messagingEnabled = $0 }
-        rawSettings.ifExists(key: "enablePreviousMessages") { settings.enablePreviousMessages = $0 }
-        rawSettings.ifExists(key: "beaconTitle") { settings.beaconTitle = $0 }
-        rawSettings.ifExists(key: "tintColorOverride", ofType: String.self) { settings.tintColorOverride = UIColor.from(hex: $0) }
-        rawSettings.ifExists(key: "color", ofType: String.self) { settings.color = UIColor.from(hex: $0) }
-        rawSettings.ifExists(key: "useNavigationBarAppearance") { settings.useNavigationBarAppearance = $0 }
-        rawSettings.ifExists(key: "useLocalTranslationOverrides") { settings.useLocalTranslationOverrides = $0 }
-        rawSettings.ifExists(key: "focusMode", ofType: String.self) {
-            switch($0) {
-            case "neutral": settings.focusModeOverride = .neutral
-            case "self-service": settings.focusModeOverride = .selfService
-            case "ask-first": settings.focusModeOverride = .askFirst
-            default: fatalError("Invalid focus mode: " + $0)
-            }
-        }
-        
-        return settings
-    }
-    
-    private func extractBeaconSuggestions(from array: NSArray) -> [HSBeaconSuggestionItem] {
-        let allSuggestions: [HSBeaconSuggestionItem?] = array.map { suggestionRaw in
-            guard let suggestion = suggestionRaw as? NSDictionary, let type = suggestion.value(forKey: "type") as? String else {
-                return nil
-            }
-            
-            if type == "link" {
-                guard
-                    let link = suggestion.value(forKey: "link") as? String,
-                    let url = URL(string: link),
-                    let label = suggestion.value(forKey: "label") as? String
-                else {
-                    return nil
-                }
-                return HSBeaconLinkSuggestion(url: url, text: label)
-            } else if type == "article" {
-                guard let articleId = suggestion.value(forKey: "articleId") as? String else {
-                    return nil
-                }
-                return HSBeaconArticleSuggestion(id: articleId)
-            } else {
-                fatalError("Suggestion type not supported: " + type)
-            }
-        }
-        
-        let validSuggestions = allSuggestions.filter { $0 != nil } as! [HSBeaconSuggestionItem]
-        return validSuggestions
-    }
+    private var actualFormData: HSBridgeHelper.PrefillFormData?
 
     @objc(open:signature:withResolver:withRejecter:)
     func open(_ rawSettings: NSDictionary?, signature: NSString?, resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
@@ -148,7 +14,8 @@ class HelpScoutBeacon: NSObject {
           return
         }
         
-        let settings = extractBeaconSettings(from: rawSettings)
+        let settings = HSBridgeHelper.extractBeaconSettings(from: rawSettings)
+        settings.delegate = self
         DispatchQueue.main.async {
             if let signature = signature {
                 HSBeacon.open(settings, signature: String(signature))
@@ -157,7 +24,7 @@ class HelpScoutBeacon: NSObject {
             }
         }
         
-        if let user = extractBeaconUser(fromSettings: rawSettings) {
+        if let user = HSBridgeHelper.extractBeaconUser(fromSettings: rawSettings) {
             DispatchQueue.main.async {
                 HSBeacon.identify(user)
             }
@@ -167,7 +34,7 @@ class HelpScoutBeacon: NSObject {
     
     @objc(identify:withResolver:withRejecter:)
     func identify(_ identity: NSDictionary?, resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
-        guard let identity = identity, let user = extractBeaconUser(fromIdentity: identity) else {
+        guard let identity = identity, let user = HSBridgeHelper.extractBeaconUser(fromIdentity: identity) else {
           reject("missing-identity", "Missing or invalid identity.", nil)
           return
         }
@@ -207,7 +74,7 @@ class HelpScoutBeacon: NSObject {
           return
         }
         
-        let beaconSuggestions = extractBeaconSuggestions(from: suggestions)
+        let beaconSuggestions = HSBridgeHelper.extractBeaconSuggestions(from: suggestions)
         
         DispatchQueue.main.async {
             HSBeacon.suggest(with: beaconSuggestions)
@@ -228,7 +95,8 @@ class HelpScoutBeacon: NSObject {
         
         let route = BeaconRoute.from(jsRoute: String(jsRoute), articleId: articleId != nil ? String(articleId!) : nil)
         
-        let settings = extractBeaconSettings(from: rawSettings)
+        let settings = HSBridgeHelper.extractBeaconSettings(from: rawSettings)
+        settings.delegate = self
         DispatchQueue.main.async {
             if let signature = signature {
                 HSBeacon.navigate(route.route, beaconSettings: settings, signature: String(signature))
@@ -237,7 +105,7 @@ class HelpScoutBeacon: NSObject {
             }
         }
         
-        if let user = extractBeaconUser(fromSettings: rawSettings) {
+        if let user = HSBridgeHelper.extractBeaconUser(fromSettings: rawSettings) {
             DispatchQueue.main.async {
                 HSBeacon.identify(user)
             }
@@ -256,7 +124,8 @@ class HelpScoutBeacon: NSObject {
           return
         }
         
-        let settings = extractBeaconSettings(from: rawSettings)
+        let settings = HSBridgeHelper.extractBeaconSettings(from: rawSettings)
+        settings.delegate = self
         DispatchQueue.main.async {
             if let signature = signature {
                 HSBeacon.search(String(query), beaconSettings: settings, signature: String(signature))
@@ -265,11 +134,59 @@ class HelpScoutBeacon: NSObject {
             }
         }
         
-        if let user = extractBeaconUser(fromSettings: rawSettings) {
+        if let user = HSBridgeHelper.extractBeaconUser(fromSettings: rawSettings) {
             DispatchQueue.main.async {
                 HSBeacon.identify(user)
             }
         }
         resolve(nil)
     }
+    
+    @objc(prefillContactForm:withResolver:withRejecter:)
+    func prefillContactForm(formData rawFormData: NSDictionary?, resolve:RCTPromiseResolveBlock,reject:RCTPromiseRejectBlock) -> Void {
+        guard let rawFormData = rawFormData else {
+          reject("missing-formdata", "Missing formdata.", nil)
+          return
+        }
+        
+        let formData = HSBridgeHelper.extractFormData(from: rawFormData)
+        actualFormData = formData
+        resolve(nil)
+    }
+    
+    @objc(resetContactForm:withRejecter:)
+    func resetContactForm(_ resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
+        DispatchQueue.main.async {
+            HSBeacon.reset()
+        }
+        resolve(nil)
+    }
+    
+    @objc(resetPrefilledForm:withRejecter:)
+    func resetPrefilledForm(_ resolve:RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
+        DispatchQueue.main.async {
+            HSBeacon.reset()
+        }
+        resolve(nil)
+    }
+    
+}
+
+extension HelpScoutBeacon: HSBeaconDelegate {
+    
+    func prefill(_ form: HSBeaconContactForm) {
+        if let formData = actualFormData {
+            form.name = formData.name ?? form.name
+            form.email = formData.email ?? form.email
+            form.subject = formData.subject ?? form.subject
+            form.text = formData.message ?? form.text
+            
+            if let customFieldValues = formData.customFieldValues {
+                customFieldValues.forEach { (key: Any, value: Any) in
+                    form.addCustomFieldValue(value as! String, forId: key as! Int32)
+                }
+            }
+        }
+    }
+    
 }
