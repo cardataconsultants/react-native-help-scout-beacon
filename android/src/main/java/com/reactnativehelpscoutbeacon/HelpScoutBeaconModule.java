@@ -121,8 +121,8 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
       } else if(type == "article") {
         String articleId = rawSuggestion.getString("articleId");
         suggestions.add(new SuggestedArticle.SuggestedArticleWithId(articleId));
-      } else {
-        throw new Error("Invalid suggestion type: " + type);
+      } else {;
+        // throw new Error("ASDF - Invalid suggestion type: " + type);
       }
     }
 
