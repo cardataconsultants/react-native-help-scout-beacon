@@ -114,15 +114,15 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     for(int index = 0; index < rawSuggestions.size(); index++) {
       ReadableMap rawSuggestion = rawSuggestions.getMap(index);
       String type = rawSuggestion.getString("type");
-      if(type == "link") {
+      if(type.equals("link")) {
         String link = rawSuggestion.getString("link");
         String label = rawSuggestion.getString("label");
         suggestions.add(new SuggestedArticle.SuggestedArticleWithUrl(label, link));
-      } else if(type == "article") {
+      } else if(type.equals("article")) {
         String articleId = rawSuggestion.getString("articleId");
         suggestions.add(new SuggestedArticle.SuggestedArticleWithId(articleId));
       } else {;
-        // throw new Error("ASDF - Invalid suggestion type: " + type);
+        throw new Error("Invalid suggestion type: " + type);
       }
     }
 
@@ -188,7 +188,7 @@ public class HelpScoutBeaconModule extends ReactContextBaseJavaModule {
     }
 
     ArrayList<String> data = new ArrayList<>();
-    if(route == "article") {
+    if(route.equals("article")) {
       data.add(articleId);
     }
 
