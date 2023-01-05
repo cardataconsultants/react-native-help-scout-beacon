@@ -11,7 +11,7 @@ export default function App() {
         onPress={() => {
           console.log('Opening Beacon');
           Beacon.open({
-            beaconId: '8def2df8-5359-491f-8eee-66df8f0348ef',
+            beaconId: 'b4ade788-aa80-43b2-8a33-9c4b28feaf06',
             color: '#497E76', // mint turquoise
           });
         }}
@@ -39,7 +39,16 @@ export default function App() {
               link: 'https://www.google.com/',
               label: 'Custom RN Suggestion',
             },
+            {
+              type: 'article',
+              articleId: '632491061ec1962d58a8010e',
+            },
           ]);
+
+          Beacon.open({
+            beaconId: 'b4ade788-aa80-43b2-8a33-9c4b28feaf06',
+            color: '#497E76', // mint turquoise
+          });
         }}
       />
     </View>
