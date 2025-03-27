@@ -125,7 +125,7 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
-  implementation "com.helpscout:beacon:+"
+  implementation "com.helpscout:beacon:5.2.1"
 // From node_modules
 }
 
